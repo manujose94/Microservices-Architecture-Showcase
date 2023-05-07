@@ -1,0 +1,25 @@
+# Stage 1: Build the app with webpack
+FROM node:18.15.0-alpine AS build
+# Set the working directory to /app
+WORKDIR /app 
+# Copy package.json and package-lock.json to /app
+COPY package*.json .
+# Install dependencies with npm ci
+RUN npm ci
+# Copy the rest of the application code to /app
+COPY . .
+# Build the app with webpack
+RUN npm run build
+
+# Stage 2: Create a lightweight image with only the app code
+FROM node:18.15.0-alpine
+# Set the working directory to /app
+WORKDIR /app 
+# Copy package.json and package-lock.json to /app
+COPY package*.json ./
+# Install only production dependencies with npm ci
+RUN npm ci  --production 
+# Copy the built code from the previous stage
+COPY --from=build /app/dist ./dist
+# Start the server
+CMD ["node", "./dist/build.js"] 

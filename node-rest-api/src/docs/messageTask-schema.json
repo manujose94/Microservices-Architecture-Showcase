@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "messageTask",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "objectid"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1
+      },
+      "name_item": {
+        "type": "string"
+      },
+      "task_id": {
+        "type": "string",
+        "format": "objectid"
+      },
+      "action": {
+        "type": "string",
+        "enum": ["search-price"],
+        "default": "search-price"
+      },
+      "status": {
+        "type": "string",
+        "enum": ["created", "in progress", "completed"],
+        "default": "created"
+      },
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": ["title", "task_id", "id"]
+  }

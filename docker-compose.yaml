@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    environment:
+      #Note that the .env file should be located in the same directory as the docker-compose.yml file.
+      # connect as admin permission to manage overall databases
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    ports:
+      - "27017:27017"
+    volumes:
+    # Example of config about  user of a sepecific database 
+      - ./mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=elastic.pass # Password for our 'elastic' user
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: always
+  kibana:
+    image: 'docker.elastic.co/kibana/kibana:7.15.1'
+    container_name: kibana
+    environment:
+      SERVER_NAME: kibana.local
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_PASSWORD: elastic.pass
+      ELASTICSEARCH_USERNAME: elastic
+    ports:
+      - '5601:5601'
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
+    depends_on:
+      - elasticsearch
+  zookeeper:
+    image: wurstmeister/zookeeper
+    hostname: zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+
+  kafka0:
+    image: wurstmeister/kafka
+    restart: always
+    hostname: kafka0
+    ports:
+      - '9092:9092'
+      - '9999:9999'
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka0
+      KAFKA_LISTENERS: INTERNAL://kafka0:19092,EXTERNAL://kafka0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka0:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      #KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+      #KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:9093
+      #KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      #KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_CREATE_TOPICS: "pending-tasks:1:1,completed-tasks:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      #KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+    depends_on:
+      - zookeeper
+   
+  node-rest-api:
+    build:
+      context: ./node-rest-api
+      target: production
+    image: node-rest-api
+    container_name: node-rest-api-container
+    env_file:
+      - ./node-rest-api/.env
+    depends_on:
+      - mongodb
+      - kafka0
+    ports:
+      - 3000:3000
+  node-task-updater:
+    build:
+      context: ./node-task-updater
+      target: production
+    image: node-task-updater
+    container_name: node-task-updater-container
+    env_file:
+      - ./node-task-updater/.env
+    restart: on-failure:5
+    depends_on:
+      - mongodb
+      - kafka0
+  go-worker:
+    build:
+      context: ./go-worker
+    image: go-worker
+    container_name: go-worker-container
+    restart: on-failure:5
+    environment:
+      KAFKA_HOST: kafka0:19092
+    depends_on:
+      - kafka0
+
+volumes:
+   elasticsearch_data:
+   grafana_data:

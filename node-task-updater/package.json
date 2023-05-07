@@ -1,0 +1,17 @@
+{
+  "name": "task-handler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kafka-node": "^5.0.0",
+    "mongoose": "^7.1.0",
+    "retry": "^0.13.1"
+  }
+}

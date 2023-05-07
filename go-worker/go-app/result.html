@@ -1,0 +1,28 @@
+
+<canvas id="myChart" width="400" height="400"></canvas>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+        <script>
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ["LEGO Batman","LEGO Batman 2","Batman: Arkham VR","LEGO Batman Trilogy","Batman: Arkham Knight","Batman: Arkham Origins","Batman Arkham City GOTY","Batman: Arkham Collection","LEGO Batman: The Videogame","LEGO Batman 3: Beyond Gotham","Batman Game of the Year Pack","Batman - The Telltale Series","LEGO Batman 2: DC Super Heroes"],
+                    datasets: [{
+                        label: 'Prices',
+                        data: [15.95,15.95,15.89,49.99,15.89,14.99,15.99,50.39,14.99,15.89,39.98,11.8,15.99],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+        </script>
