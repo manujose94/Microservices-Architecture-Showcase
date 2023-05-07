@@ -78,6 +78,16 @@ These services are essential for the microservices architecture to function corr
 > **Take into account .env files** (used to solve the dependencies between services).
 > As this is a learning and testing purpose project, the .env files are kept in the repository. But it is always advisable for project **not upload** these files.
 
+### Launch
+
+Launch Docker Compose to deploy:
+
+```bash
+   docker-compose up -d
+```
+
+For more information about using any of the services listed above, please access the Readme of their respective folders.
+
 ### About ElasticSearch
 
 This service is launched with basic authentication (test), it's recommended ( for production) to have network encryption enabled, and a Kibana instance securely connected to it. There is official documentation on how to achieve this, as well as more information on elasticsearch and kibana images:
